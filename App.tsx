@@ -1,12 +1,4 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, { useEffect } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -15,51 +7,61 @@ import {
   Text,
   useColorScheme,
   View,
+  Button,
+  ToastAndroid,
 } from 'react-native';
+import Sound from 'react-native-sound';
+import VolumeControl from 'react-native-volume-control';
+import BackgroundTimer from 'react-native-background-timer';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
+const App = (): React.JSX.Element => {
   const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
-
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
   const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+    backgroundColor: isDarkMode ? '#333333' : '#FFFFFF',
+  };
+
+  let sound: Sound | null = null;
+
+  useEffect(() => {
+    // Load the sound file
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    sound = new Sound('play.mp3', Sound.MAIN_BUNDLE, (error) => {
+      if (error) {
+        console.error('Failed to load sound', error);
+        return;
+      }
+    });
+
+    return () => {
+      // Release the sound resource when the component unmounts
+      if (sound) {
+        sound.release();
+      }
+    };
+  }, []);
+
+  const playSoundInBackground = () => {
+    // Maximize the volume
+    VolumeControl.change(1.0);
+
+    // Play sound
+    if (sound) {
+      sound.setNumberOfLoops(-1); // Infinite loop
+      sound.play((success) => {
+        if (!success) {
+          console.error('Failed to play sound');
+        }
+      });
+    }
+
+    // Start a background task
+    BackgroundTimer.runBackgroundTimer(() => {
+      if (sound && !sound.isPlaying()) {
+        sound.play();
+      }
+    }, 1000);
+
+    ToastAndroid.show('Playing sound in the background!', ToastAndroid.SHORT);
   };
 
   return (
@@ -71,47 +73,26 @@ function App(): React.JSX.Element {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         style={backgroundStyle}>
-        <Header />
         <View
+          // eslint-disable-next-line react-native/no-inline-styles
           style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
+            backgroundColor: isDarkMode ? '#000000' : '#FFFFFF',
+            padding: 20,
           }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
+          <Text style={styles.sectionTitle}>Background Sound App</Text>
+          <Button title="Play Sound" onPress={playSoundInBackground} />
         </View>
       </ScrollView>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
   sectionTitle: {
     fontSize: 24,
     fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
+    marginBottom: 20,
+    textAlign: 'center',
   },
 });
 
