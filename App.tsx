@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -20,31 +20,34 @@ const App = (): React.JSX.Element => {
     backgroundColor: isDarkMode ? '#333333' : '#FFFFFF',
   };
 
-  let sound: Sound | null = null;
+  const soundRef = useRef<Sound | null>(null);
 
   useEffect(() => {
-    // Load the sound file
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    sound = new Sound('play.mp3', Sound.MAIN_BUNDLE, (error) => {
+    // Initialize the sound
+    const sound = new Sound('play.mp3', Sound.MAIN_BUNDLE, (error) => {
       if (error) {
         console.error('Failed to load sound', error);
         return;
       }
     });
 
+    // Store the sound instance in the ref
+    soundRef.current = sound;
+
     return () => {
-      // Release the sound resource when the component unmounts
-      if (sound) {
-        sound.release();
+      // Release the sound when the component unmounts
+      if (soundRef.current) {
+        soundRef.current.release();
       }
     };
   }, []);
 
   const playSoundInBackground = () => {
-    // Maximize the volume
+    // Ensure the volume is maximized before playing
     VolumeControl.change(1.0);
 
-    // Play sound
+    const sound = soundRef.current;
+
     if (sound) {
       sound.setNumberOfLoops(-1); // Infinite loop
       sound.play((success) => {
@@ -54,8 +57,12 @@ const App = (): React.JSX.Element => {
       });
     }
 
-    // Start a background task
+    // Start a background task to ensure volume stays at max
     BackgroundTimer.runBackgroundTimer(() => {
+      // Set volume to maximum every second
+      VolumeControl.change(1.0);
+
+      // Ensure the sound is still playing
       if (sound && !sound.isPlaying()) {
         sound.play();
       }
