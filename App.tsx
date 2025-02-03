@@ -1,5 +1,5 @@
 // App.tsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -10,6 +10,7 @@ import {
   View,
   Button,
   FlatList,
+  TextInput,
 } from 'react-native';
 import { useBluetooth } from './useBluetooth';
 import { useSound } from './useSound';
@@ -20,11 +21,21 @@ const App = (): React.JSX.Element => {
     backgroundColor: isDarkMode ? '#333333' : '#FFFFFF',
   };
 
-  const { devices, trackingDevice, rssi, startScan, startTracking, stopTracking } =
-    useBluetooth();
+  const {
+    devices,
+    trackingDevice,
+    rssi,
+    startScan,
+    startTracking,
+    stopTracking,
+    savedDevices,
+    saveDevice,
+    connectToSavedDevice,
+  } = useBluetooth();
   const { playSound, stopSound } = useSound();
+  const [customName, setCustomName] = useState('');
 
-  // Control sound playback based on RSSI changes
+  // Control sound playback based on RSSI changes.
   useEffect(() => {
     if (rssi !== null) {
       if (rssi < -60) {
@@ -42,22 +53,42 @@ const App = (): React.JSX.Element => {
         backgroundColor={backgroundStyle.backgroundColor}
       />
       <ScrollView contentInsetAdjustmentBehavior="automatic" style={backgroundStyle}>
-        <View style={{ backgroundColor: isDarkMode ? '#000000' : '#FFFFFF', padding: 20 }}>
+        <View style={[styles.container, { backgroundColor: isDarkMode ? '#000000' : '#FFFFFF' }]}>
           <Text style={styles.sectionTitle}>Bluetooth RSSI Tracker with Sound</Text>
           <Button title="Start Scan" onPress={startScan} />
-          <Text>Available Devices:</Text>
+
+          {/* Scanned Devices */}
+          <Text style={styles.subTitle}>Available Devices:</Text>
           <FlatList
             data={devices}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <Button title={item.name || 'Unnamed Device'} onPress={() => startTracking(item)} />
+              <Button title={item.name || item.id} onPress={() => startTracking(item)} />
             )}
           />
 
+          {/* Tracking Device Section */}
           {trackingDevice && (
-            <View>
-              <Text>Tracking: {trackingDevice.name || 'Unnamed Device'}</Text>
-              <Text>RSSI: {rssi !== null ? rssi : 'Reading...'}</Text>
+            <View style={styles.trackingContainer}>
+              <Text style={styles.trackingText}>
+                Tracking: {trackingDevice.name || trackingDevice.id}
+              </Text>
+              <Text style={styles.trackingText}>
+                RSSI: {rssi !== null ? rssi : 'Reading...'}
+              </Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter custom name"
+                value={customName}
+                onChangeText={setCustomName}
+              />
+              <Button
+                title="Save Device"
+                onPress={() => {
+                  saveDevice(trackingDevice, customName);
+                  setCustomName('');
+                }}
+              />
               <Button
                 title="Stop Tracking"
                 onPress={() => {
@@ -67,6 +98,16 @@ const App = (): React.JSX.Element => {
               />
             </View>
           )}
+
+          {/* Saved Devices Section */}
+          <Text style={styles.subTitle}>Saved Devices:</Text>
+          <FlatList
+            data={savedDevices}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <Button title={item.name} onPress={() => connectToSavedDevice(item)} />
+            )}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -74,11 +115,34 @@ const App = (): React.JSX.Element => {
 };
 
 const styles = StyleSheet.create({
+  container: {
+    padding: 20,
+  },
   sectionTitle: {
     fontSize: 24,
     fontWeight: '600',
     marginBottom: 20,
     textAlign: 'center',
+  },
+  subTitle: {
+    fontSize: 18,
+    fontWeight: '500',
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  trackingContainer: {
+    marginTop: 20,
+  },
+  trackingText: {
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 10,
+    paddingHorizontal: 8,
   },
 });
 
