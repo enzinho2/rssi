@@ -10,6 +10,10 @@
     "test": "jest"
   },
   "dependencies": {
+    "@eva-design/eva": "^2.2.0",
+    "@ui-kitten/components": "^5.3.1",
+    "@ui-kitten/eva-icons": "^5.3.1",
+    "lottie-react-native": "^7.2.2",
     "react": "18.3.1",
     "react-native": "0.76.6",
     "react-native-background-timer": "^2.4.1",
