@@ -4,22 +4,33 @@ import {
   SafeAreaView,
   ScrollView,
   StatusBar,
-  StyleSheet,
   Text,
   useColorScheme,
   View,
-  Button,
   FlatList,
   TextInput,
+  Pressable,
 } from 'react-native';
 import { useBluetooth } from './useBluetooth';
 import { useSound } from './useSound';
 
+// A custom button using Pressable so we can style it with Tailwind classes.
+const TWButton = ({
+  title,
+  onPress,
+  extraClasses = '',
+}: {
+  title: string;
+  onPress: () => void;
+  extraClasses?: string;
+}) => (
+  <Pressable onPress={onPress} className={`bg-blue-500 py-2 px-4 rounded ${extraClasses}`}>
+    <Text className="text-white text-center">{title}</Text>
+  </Pressable>
+);
+
 const App = (): React.JSX.Element => {
   const isDarkMode = useColorScheme() === 'dark';
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? '#333333' : '#FFFFFF',
-  };
 
   const {
     devices,
@@ -47,49 +58,60 @@ const App = (): React.JSX.Element => {
   }, [rssi, playSound, stopSound]);
 
   return (
-    <SafeAreaView style={backgroundStyle}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-gray-800">
       <StatusBar
         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+        backgroundColor={isDarkMode ? '#333333' : '#FFFFFF'}
       />
-      <ScrollView contentInsetAdjustmentBehavior="automatic" style={backgroundStyle}>
-        <View style={[styles.container, { backgroundColor: isDarkMode ? '#000000' : '#FFFFFF' }]}>
-          <Text style={styles.sectionTitle}>Bluetooth RSSI Tracker with Sound</Text>
-          <Button title="Start Scan" onPress={startScan} />
+      <ScrollView contentInsetAdjustmentBehavior="automatic" className="bg-white dark:bg-gray-800">
+        <View className="p-5 bg-white dark:bg-black">
+          {/* Header */}
+          <Text className="text-2xl font-semibold mb-5 text-center text-black dark:text-white">
+            Bluetooth RSSI Tracker with Sound
+          </Text>
 
-          {/* Scanned Devices */}
-          <Text style={styles.subTitle}>Available Devices:</Text>
+          {/* Scan Button */}
+          <TWButton title="Start Scan" onPress={startScan} extraClasses="mb-4" />
+
+          {/* Available Devices */}
+          <Text className="text-lg font-medium mt-5 mb-2 text-black dark:text-white">
+            Available Devices:
+          </Text>
           <FlatList
             data={devices}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <Button title={item.name || item.id} onPress={() => startTracking(item)} />
+              <View className="mb-2">
+                <TWButton title={item.name || item.id} onPress={() => startTracking(item)} />
+              </View>
             )}
           />
 
           {/* Tracking Device Section */}
           {trackingDevice && (
-            <View style={styles.trackingContainer}>
-              <Text style={styles.trackingText}>
+            <View className="mt-5">
+              <Text className="text-base text-black dark:text-white mb-2">
                 Tracking: {trackingDevice.name || trackingDevice.id}
               </Text>
-              <Text style={styles.trackingText}>
+              <Text className="text-base text-black dark:text-white mb-2">
                 RSSI: {rssi !== null ? rssi : 'Reading...'}
               </Text>
               <TextInput
-                style={styles.input}
+                className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 mb-3 text-black dark:text-white"
                 placeholder="Enter custom name"
+                placeholderTextColor={isDarkMode ? '#A0AEC0' : '#718096'}
                 value={customName}
                 onChangeText={setCustomName}
               />
-              <Button
+              <TWButton
                 title="Save Device"
                 onPress={() => {
                   saveDevice(trackingDevice, customName);
                   setCustomName('');
                 }}
+                extraClasses="mb-2"
               />
-              <Button
+              <TWButton
                 title="Stop Tracking"
                 onPress={() => {
                   stopTracking();
@@ -100,12 +122,16 @@ const App = (): React.JSX.Element => {
           )}
 
           {/* Saved Devices Section */}
-          <Text style={styles.subTitle}>Saved Devices:</Text>
+          <Text className="text-lg font-medium mt-5 mb-2 text-black dark:text-white">
+            Saved Devices:
+          </Text>
           <FlatList
             data={savedDevices}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <Button title={item.name} onPress={() => connectToSavedDevice(item)} />
+              <View className="mb-2">
+                <TWButton title={item.name} onPress={() => connectToSavedDevice(item)} />
+              </View>
             )}
           />
         </View>
@@ -113,37 +139,5 @@ const App = (): React.JSX.Element => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  subTitle: {
-    fontSize: 18,
-    fontWeight: '500',
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  trackingContainer: {
-    marginTop: 20,
-  },
-  trackingText: {
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 10,
-    paddingHorizontal: 8,
-  },
-});
 
 export default App;
