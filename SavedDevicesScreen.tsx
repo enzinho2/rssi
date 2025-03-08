@@ -1,7 +1,6 @@
-// SavedDevicesScreen.tsx
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { Layout, Text, List, ListItem } from '@ui-kitten/components';
+import { Layout, Text, List, ListItem, useTheme } from '@ui-kitten/components';
 import { SavedDevice } from './types';
 
 interface SavedDevicesScreenProps {
@@ -13,19 +12,28 @@ const SavedDevicesScreen: React.FC<SavedDevicesScreenProps> = ({
   savedDevices,
   connectToSavedDevice,
 }) => {
+  const theme = useTheme();
+
   return (
-    <Layout style={styles.container}>
-      <Text category="h4" style={styles.title}>
+    <Layout style={[styles.container, { backgroundColor: theme['color-basic-100'] }]}>
+      <Text 
+        category="h4" 
+        style={[styles.title, { color: theme['color-basic-800'] }]}
+      >
         Saved Devices
       </Text>
       
       <List
         data={savedDevices}
-        ListEmptyComponent={<Text style={styles.emptyText}>No saved devices found</Text>}
+        ListEmptyComponent={
+          <Text style={[styles.emptyText, { color: theme['color-basic-800'] }]}>
+            No saved devices found
+          </Text>
+        }
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <ListItem
-            title={<Text>{item.name}</Text>}
+            title={<Text style={{ color: theme['color-basic-800'] }}>{item.name}</Text>}
             onPress={() => connectToSavedDevice(item)}
           />
         )}

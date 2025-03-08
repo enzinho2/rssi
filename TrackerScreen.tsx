@@ -1,7 +1,6 @@
-// TrackerScreen.tsx
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { Layout, Text, Button, Input, List, ListItem } from '@ui-kitten/components';
+import { Layout, Text, Button, Input, List, ListItem, useTheme } from '@ui-kitten/components';
 import { BLEDevice, SavedDevice } from './types';
 
 interface TrackerScreenProps {
@@ -29,41 +28,52 @@ const TrackerScreen: React.FC<TrackerScreenProps> = ({
   customName,
   setCustomName,
 }) => {
-  // Filter out saved devices from the available devices list
-  const unsavedDevices = devices.filter(device => 
+  const theme = useTheme();
+  const unsavedDevices = devices.filter(device =>
     !savedDevices.some(saved => saved.id === device.id)
   );
 
   return (
-    <Layout style={styles.container}>
-      <Text category="h4" style={styles.title}>
+    <Layout style={[styles.container, { backgroundColor: theme['color-basic-100'] }]}>
+      <Text
+        category="h4"
+        style={[styles.title, { color: theme['color-basic-800'] }]}
+      >
         Bluetooth Tracker
       </Text>
 
-      <Button onPress={startScan} style={styles.button}>
+      <Button
+        onPress={startScan}
+        style={styles.button}
+        status="primary"
+      >
         Start Scan
       </Button>
 
-      <Text category="s1" style={styles.subtitle}>
+      <Text
+        category="s1"
+        style={[styles.subtitle, { color: theme['color-basic-800'] }]}
+      >
         Available Devices:
       </Text>
+
       <List
         data={unsavedDevices}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <ListItem
-            title={item.name ?? item.id}
+            title={<Text style={{ color: theme['color-basic-800'] }}>{item.name ?? item.id}</Text>}
             onPress={() => startTracking(item)}
           />
         )}
       />
 
       {trackingDevice && (
-        <Layout style={styles.trackingContainer}>
-          <Text category="s1">
+        <Layout style={[styles.trackingContainer, { backgroundColor: theme['color-basic-200'] }]}>
+          <Text category="s1" style={{ color: theme['color-basic-800'] }}>
             Tracking: {trackingDevice.name ?? trackingDevice.id}
           </Text>
-          <Text category="s2">
+          <Text category="s2" style={{ color: theme['color-basic-800'] }}>
             RSSI: {rssi !== null ? rssi : 'Reading...'}
           </Text>
 
@@ -72,6 +82,7 @@ const TrackerScreen: React.FC<TrackerScreenProps> = ({
             value={customName}
             onChangeText={setCustomName}
             style={styles.input}
+            placeholderTextColor={theme['color-basic-600']}
           />
           <Button
             onPress={() => {
@@ -79,10 +90,15 @@ const TrackerScreen: React.FC<TrackerScreenProps> = ({
               setCustomName('');
             }}
             style={styles.button}
+            status="primary"
           >
             Save Device
           </Button>
-          <Button onPress={stopTracking} style={styles.button} status="danger">
+          <Button
+            onPress={stopTracking}
+            style={styles.button}
+            status="danger"
+          >
             Stop Tracking
           </Button>
         </Layout>
@@ -94,7 +110,6 @@ const TrackerScreen: React.FC<TrackerScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
   title: {
     textAlign: 'center',
@@ -110,7 +125,6 @@ const styles = StyleSheet.create({
     marginVertical: 16,
     padding: 16,
     borderRadius: 8,
-    backgroundColor: '#f2f2f2',
   },
   input: {
     marginVertical: 8,
