@@ -1,38 +1,34 @@
 // App.tsx
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView, StatusBar } from 'react-native';
-import { ApplicationProvider, IconRegistry } from '@ui-kitten/components';
+import { ApplicationProvider, IconRegistry, Tab, TabView, Layout, Text } from '@ui-kitten/components';
 import * as eva from '@eva-design/eva';
 import { EvaIconsPack } from '@ui-kitten/eva-icons';
 
 import TrackerScreen from './TrackerScreen';
+import SavedDevicesScreen from './SavedDevicesScreen';
 import { useBluetooth } from './useBluetooth';
 import { useSound } from './useSound';
-// Import BLEDevice type for clarity (if needed)
 
 const App = (): React.JSX.Element => {
+  const [selectedTab, setSelectedTab] = useState(0);
   const {
-    devices, // Expected to be BLEDevice[]
-    trackingDevice, // BLEDevice | null
+    devices,
+    trackingDevice,
     rssi,
     startScan,
-    startTracking, // Should have signature: (device: BLEDevice) => Promise<void>
+    startTracking,
     stopTracking,
-    savedDevices, // Ensure these are of type SavedDevice[] (with name: string)
-    saveDevice, // (device: BLEDevice, customName: string) => Promise<void>
-    connectToSavedDevice, // (device: SavedDevice) => Promise<void>
+    savedDevices,
+    saveDevice,
+    connectToSavedDevice,
   } = useBluetooth();
   const { playSound, stopSound } = useSound();
   const [customName, setCustomName] = useState('');
 
-  // Control sound playback based on RSSI changes.
   useEffect(() => {
     if (rssi !== null) {
-      if (rssi < -60) {
-        playSound();
-      } else {
-        stopSound();
-      }
+      rssi < -60 ? playSound() : stopSound();
     }
   }, [rssi, playSound, stopSound]);
 
@@ -42,19 +38,37 @@ const App = (): React.JSX.Element => {
       <ApplicationProvider {...eva} theme={eva.light}>
         <SafeAreaView style={{ flex: 1 }}>
           <StatusBar barStyle="dark-content" />
-          <TrackerScreen
-            devices={devices}
-            trackingDevice={trackingDevice}
-            rssi={rssi}
-            startScan={startScan}
-            startTracking={startTracking}
-            stopTracking={stopTracking}
-            savedDevices={savedDevices}
-            saveDevice={saveDevice}
-            connectToSavedDevice={connectToSavedDevice}
-            customName={customName}
-            setCustomName={setCustomName}
-          />
+          <TabView
+            selectedIndex={selectedTab}
+            onSelect={index => setSelectedTab(index)}
+            style={{ flex: 1 }}
+            tabBarStyle={{ paddingVertical: 8 }}
+          >
+            <Tab title={<Text>TRACK</Text>}>
+              <Layout style={{ flex: 1 }}>
+                <TrackerScreen
+                  devices={devices}
+                  trackingDevice={trackingDevice}
+                  rssi={rssi}
+                  startScan={startScan}
+                  startTracking={startTracking}
+                  stopTracking={stopTracking}
+                  savedDevices={savedDevices}
+                  saveDevice={saveDevice}
+                  customName={customName}
+                  setCustomName={setCustomName}
+                />
+              </Layout>
+            </Tab>
+            <Tab title={<Text>SAVED DEVICES</Text>}>
+              <Layout style={{ flex: 1 }}>
+                <SavedDevicesScreen
+                  savedDevices={savedDevices}
+                  connectToSavedDevice={connectToSavedDevice}
+                />
+              </Layout>
+            </Tab>
+          </TabView>
         </SafeAreaView>
       </ApplicationProvider>
     </>

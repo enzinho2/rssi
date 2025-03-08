@@ -1,35 +1,18 @@
 // TrackerScreen.tsx
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import {
-  Layout,
-  Text,
-  Button,
-  Input,
-  List,
-  ListItem,
-} from '@ui-kitten/components';
-// Import the Device type from the BLE library and alias it for clarity
-import { Device as BLEDevice } from 'react-native-ble-plx';
-
-// Define a type for saved devices if they differ from the BLE device type.
-// Here we assume saved devices require a non-null name.
-export interface SavedDevice {
-  id: string;
-  name: string;
-}
+import { Layout, Text, Button, Input, List, ListItem } from '@ui-kitten/components';
+import { BLEDevice, SavedDevice } from './types';
 
 interface TrackerScreenProps {
   devices: BLEDevice[];
   trackingDevice: BLEDevice | null;
   rssi: number | null;
   startScan: () => void;
-  startTracking: (device: BLEDevice) => Promise<void>; // if this one is async, leave as Promise<void>
+  startTracking: (device: BLEDevice) => Promise<void>;
   stopTracking: () => void;
   savedDevices: SavedDevice[];
-  // Updated the signature for saveDevice:
   saveDevice: (device: BLEDevice, customName?: string) => void;
-  connectToSavedDevice: (device: SavedDevice) => Promise<void>;
   customName: string;
   setCustomName: (value: string) => void;
 }
@@ -43,14 +26,18 @@ const TrackerScreen: React.FC<TrackerScreenProps> = ({
   stopTracking,
   savedDevices,
   saveDevice,
-  connectToSavedDevice,
   customName,
   setCustomName,
 }) => {
+  // Filter out saved devices from the available devices list
+  const unsavedDevices = devices.filter(device => 
+    !savedDevices.some(saved => saved.id === device.id)
+  );
+
   return (
     <Layout style={styles.container}>
       <Text category="h4" style={styles.title}>
-        Bluetooth RSSI Tracker with Sound
+        Bluetooth Tracker
       </Text>
 
       <Button onPress={startScan} style={styles.button}>
@@ -61,11 +48,10 @@ const TrackerScreen: React.FC<TrackerScreenProps> = ({
         Available Devices:
       </Text>
       <List
-        data={devices}
+        data={unsavedDevices}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <ListItem
-            // Use a fallback with the nullish coalescing operator in case name is null
             title={item.name ?? item.id}
             onPress={() => startTracking(item)}
           />
@@ -81,9 +67,6 @@ const TrackerScreen: React.FC<TrackerScreenProps> = ({
             RSSI: {rssi !== null ? rssi : 'Reading...'}
           </Text>
 
-          {/* Lottie Animation for tracking (ensure the JSON file exists in your assets folder) */}
-
-
           <Input
             placeholder="Enter custom name"
             value={customName}
@@ -92,7 +75,6 @@ const TrackerScreen: React.FC<TrackerScreenProps> = ({
           />
           <Button
             onPress={() => {
-              // Call saveDevice and then clear the custom name
               saveDevice(trackingDevice, customName);
               setCustomName('');
             }}
@@ -105,20 +87,6 @@ const TrackerScreen: React.FC<TrackerScreenProps> = ({
           </Button>
         </Layout>
       )}
-
-      <Text category="s1" style={styles.subtitle}>
-        Saved Devices:
-      </Text>
-      <List
-        data={savedDevices}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <ListItem
-            title={item.name}
-            onPress={() => connectToSavedDevice(item)}
-          />
-        )}
-      />
     </Layout>
   );
 };
@@ -146,11 +114,6 @@ const styles = StyleSheet.create({
   },
   input: {
     marginVertical: 8,
-  },
-  lottie: {
-    width: '100%',
-    height: 150,
-    marginVertical: 16,
   },
 });
 
